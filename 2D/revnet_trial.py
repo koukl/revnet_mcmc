@@ -37,7 +37,7 @@ class revnet_trial:
     y2_2d = tf.reshape(y2,[-1,self.L,self.L])
 
     # ------------- define the cost function ------------
-    loss_op    = self.cost.get(e1,e2,y1,y2)
+    loss_op, ey1, ey2  = self.cost.get(e1,e2,y1,y2)
 
     decorrelate1_op = tf.divide(tf.reduce_mean(tf.multiply(x1,y1)),self.n_spins)
     decorrelate2_op = tf.divide(tf.reduce_mean(tf.multiply(x2,y2)),self.n_spins)
@@ -57,7 +57,18 @@ class revnet_trial:
       sess.run(init)
       print(' ---------------- evaluate loss_op ----------------')
       sess.run(loss_op,feed_dict={x1:trainx1,x2:trainx2,e1:traine1,e2:traine2})
-
+      print('------------- check energy calculation ------------')
+      y1_np, y2_np, ey1_, ey2_ = sess.run([y1,y2,ey1,ey2], feed_dict={x1:trainx1,x2:trainx2,e1:traine1,e2:traine2})
+      y1_np = y1_np.reshape((-1, self.L, self.L))
+      y2_np = y2_np.reshape((-1, self.L, self.L))
+      ey1_np = self.cost.np_energy(y1_np)
+      ey2_np = self.cost.np_energy(y2_np)
+      print("np ey1_: ", ey1_np)
+      print("tf ey1: ", ey1_)
+      print("np ey2_: ", ey2_np)
+      print("tf ey2: ", ey2_)
+      quit()
+   #----------------------------------------------------------    
       for i in range(niter):
         t = sess.run(train_op, feed_dict={x1:trainx1,x2:trainx2,e1:traine1,e2:traine2})
         if(i%100==0):

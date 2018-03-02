@@ -28,10 +28,7 @@ class ising2D:
 
 # =======================================================
   def energy(self,x):
-
-
 # tf version
-
     xl = tf.tensordot(x,self.tfsl,axes=[[2],[0]]) # assume sum_k x_{ijk} tfsl_{kl} gives xl_{ijl}
     xu = tf.transpose(tf.tensordot(x,self.tfsu,axes=[[1],[1]]),perm=[0,2,1])
     xxl = tf.multiply(x,xl)
@@ -51,16 +48,28 @@ class ising2D:
     es = tf.reshape(e,[-1,1])
 
 # check energy range
-    maxe = tf.reduce_max(es)
-    mine = tf.reduce_min(es)
-    maxpossible = tf.constant( 2*self.nspins)
-    minpossible = tf.constant(-2*self.nspins)
-
-    tf.cond(tf.less(maxpossible,maxe),errfunc)
-    tf.cond(tf.less(mine,minpossible),errfunc)
+#    maxe = tf.reduce_max(es)
+#    mine = tf.reduce_min(es)
+#    maxpossible = tf.constant( 2*self.nspins)
+#    minpossible = tf.constant(-2*self.nspins)
+#
+#    tf.cond(tf.less(maxpossible,maxe),errfunc)
+#    tf.cond(tf.less(mine,minpossible),errfunc)
 
     return(es)
-
+# =======================================================
+  def energy_forloop(self, x):
+    # checking energy calculation with for loops
+    E = np.zeros((x.shape[0],1))
+    for b in range(x.shape[0]):
+      for r in range(self.L):
+        for c in range(self.L):
+          # vertical links
+          E[b] -= x[b, r, c] * x[b, (r+1) % self.L, c]
+          # horizontal links
+          E[b] -= x[b, r, c] * x[b, r, (c+1) % self.L]
+      #E[b] /= self.nspins
+    return E
 # =======================================================
   def norm(self,x):
 # np version

@@ -40,6 +40,10 @@ class cost:
     print('norm shape ',norm.shape)
     print('loss shape ',loss.shape)
 
-    return(loss)
+    return(loss, ey1, ey2)
 
+# ======================================================
+  def np_energy(self,y1):
+    ey1 = self.phys_model.energy_forloop(y1)
+    return ey1
 
