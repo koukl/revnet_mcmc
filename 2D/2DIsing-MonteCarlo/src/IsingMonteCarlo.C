@@ -243,8 +243,8 @@ int main ( int argc, char * argv[]) {
 
   std::ofstream outc1("trainx1.dat");
   std::ofstream outc2("trainx2.dat");
-  std::ofstream oute1("trainy1.dat");
-  std::ofstream oute2("trainy2.dat");
+  std::ofstream oute1("traine1.dat");
+  std::ofstream oute2("traine2.dat");
 
   double T=startT;
 

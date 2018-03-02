@@ -33,12 +33,19 @@ class revnet_trial:
     e1 = tf.placeholder("float", [None, 1])
     e2 = tf.placeholder("float", [None, 1])
     y1,y2 = self.R.forward(x1,x2)
+    y1_2d = tf.reshape(y1,[-1,self.L,self.L])
+    y2_2d = tf.reshape(y2,[-1,self.L,self.L])
 
     # ------------- define the cost function ------------
     loss_op    = self.cost.get(e1,e2,y1,y2)
 
     decorrelate1_op = tf.divide(tf.reduce_mean(tf.multiply(x1,y1)),self.n_spins)
     decorrelate2_op = tf.divide(tf.reduce_mean(tf.multiply(x2,y2)),self.n_spins)
+
+    de1_op          = tf.subtract(e1,self.ising.energy(y1_2d))
+    de2_op          = tf.subtract(e2,self.ising.energy(y2_2d))
+    demean_op       = tf.reduce_mean(tf.square(tf.add(de1_op,de2_op)))
+
     # ------------- define the optimizer ------------
     optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
     train_op  = optimizer.minimize(loss_op)
@@ -59,6 +66,8 @@ class revnet_trial:
 	  deco1 = sess.run(decorrelate1_op,feed_dict={x1:trainx1,x2:trainx2})
 	  deco2 = sess.run(decorrelate2_op,feed_dict={x1:trainx1,x2:trainx2})
           print('decorrelation ',deco1,' : ',deco2)
+	  de = sess.run(demean_op,feed_dict={x1:trainx1,x2:trainx2,e1:traine1,e2:traine2})
+          print('de mean ',de )
 
 
 # ==================================================================

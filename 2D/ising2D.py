@@ -49,6 +49,16 @@ class ising2D:
 #
 # need to reshape e into [ndata,1]
     es = tf.reshape(e,[-1,1])
+
+# check energy range
+    maxe = tf.reduce_max(es)
+    mine = tf.reduce_min(es)
+    maxpossible = tf.constant( 2*self.nspins)
+    minpossible = tf.constant(-2*self.nspins)
+
+    tf.cond(tf.less(maxpossible,maxe),errfunc)
+    tf.cond(tf.less(mine,minpossible),errfunc)
+
     return(es)
 
 # =======================================================
@@ -57,3 +67,7 @@ class ising2D:
 #    return np.sum(np.multiply(x,x))/self.nspins
     return(0)
 
+# =======================================================
+  def errfunc(self):
+    print('energy calculation error')
+    quit()
