@@ -42,6 +42,18 @@ class ising2D:
 
     es = tf.reshape(e,[-1,1])
 
+    # to force error
+#    es = es - 1000
+    # check energy range
+    maxe = tf.reduce_max(es)
+    mine = tf.reduce_min(es)
+    maxpossible = tf.constant( 2.0*self.nspins)
+    minpossible = tf.constant(-2.0*self.nspins)
+
+    with tf.control_dependencies([tf.assert_less(maxe,maxpossible)]):
+      es = es * 1
+    with tf.control_dependencies([tf.assert_less(minpossible,mine)]):
+      es = es * 1
     return(es)
 # =======================================================
   def energy_forloop(self, x):
