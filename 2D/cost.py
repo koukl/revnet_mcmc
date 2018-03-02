@@ -21,26 +21,19 @@ class cost:
     ex = tf.add(e1,e2)
     ey = tf.add(ey1,ey2)
 
-    norm1 = tf.reduce_sum(tf.multiply(y1,y1),reduction_indices=[1])
-    norm2 = tf.reduce_sum(tf.multiply(y2,y2),reduction_indices=[1]) 
+    norm1 = tf.reduce_mean(tf.multiply(y1,y1),reduction_indices=[1])
+    norm2 = tf.reduce_mean(tf.multiply(y2,y2),reduction_indices=[1]) 
 
     fedi     = tf.square(ex-ey)
 
-    tflambda = tf.constant(self.lam)
-    tfnspins = tf.constant(L*L,dtype=tf.float32)
-    norm     = tf.multiply(tflambda,tf.add(norm1,norm2))
-    norm     = tf.divide(norm,tfnspins)
+    norm     = tf.add(norm1,norm2)
     norm     = tf.reshape(norm,[-1,1])
 
-    loss = tf.reduce_mean(tf.add(fedi,norm))
+    loss = tf.reduce_mean(tf.add(fedi,tf.scalar_mul(0.5*self.lam,norm)))
+    fedi_mean = tf.reduce_mean(fedi)
+    norm_mean = tf.reduce_mean(norm)
 
-    print('ex shape ',ex.shape)
-    print('ey shape ',ey.shape)
-    print('fedi shape ',fedi.shape)
-    print('norm shape ',norm.shape)
-    print('loss shape ',loss.shape)
-
-    return(loss, ey1, ey2)
+    return(loss, fedi_mean, norm_mean, ey1, ey2)
 
 # ======================================================
   def np_energy(self,y1):

@@ -6,8 +6,10 @@ import tensorflow as tf
 
 # -------- global constant variables ----------
 L             = 8
-training_time = 10000
+training_time = 100000
 ising         = ising2D(L)
+seed          = 71385
+tf.set_random_seed(seed)
 
 # ------ read in data from csv files -----------
 trainx1 = np.loadtxt('2DIsing-MonteCarlo/bin/trainx1.dat',delimiter=',')

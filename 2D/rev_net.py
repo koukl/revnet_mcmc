@@ -5,13 +5,13 @@
 #
 # forward
 #
-#  y2 = F(x1) + x2
-#  y1 = G(y2) + x1
+#  y2 = 0.5*( F(x1) + x2 )
+#  y1 = 0.5*( G(y2) + x1 )
 #
 # inverse
 #
-#  x1 = y1 - G(y2)
-#  x2 = y2 - F(x1)
+#  x1 = 2*y1 - G(y2)
+#  x2 = 2*y2 - F(x1)
 
 import tensorflow as tf
 
@@ -25,9 +25,9 @@ class rev_net:
   def forward(self,x1,x2):
 
     Fx1 = self.F.net(x1)
-    y2  = tf.add(x2,Fx1)
+    y2  = tf.scalar_mul(0.5,tf.add(x2,Fx1))
     Gy2 = self.G.net(y2)
-    y1  = tf.add(Gy2,x1)
+    y1  = tf.scalar_mul(0.5,tf.add(Gy2,x1))
 
     return y1,y2 
 
@@ -36,8 +36,8 @@ class rev_net:
   def backward(self,y1,y2):
 
     Gy2 = self.G.net(y2)
-    x1  = tf.subtract(y1,Gy2)
+    x1  = tf.subtract(tf.scalar_mul(2,y1),Gy2)
     Fx1 = self.F.net(x1)
-    x2  = tf.subtract(y2,Fx1)
+    x2  = tf.subtract(tf.scalar_mul(2,y2),Fx1)
     
     return(x1,x2)
