@@ -1,0 +1,119 @@
+\documentclass{article}
+
+\title{Learning MC algorithms}
+\author{Lee Hwee Kuan}
+
+\begin{document}
+\maketitle
+
+Consider a system of 2D Ising spins $\sigma = (s_1,s_2, \cdots s_n)$ with $s_i =\pm 1$
+on a squre lattice of size $L \times L$ sites.
+Hamiltonian is 
+\begin{equation}
+E(\sigma) = - \sum_{\langle i,j\rangle} s_i s_j
+\end{equation}
+where $\langle i,j \rangle$ represents summation over nearest neighbors on 
+the square lattice. Each edge on this graph is sum over once.
+The objective is to make a RevNet that learns how to do MCMC with detailed balance
+condition satisfied.
+
+\section{Implementation in tensorflow and matrix representation of Hamilitonian}
+
+Tensorflow works with linear algebra and hence we need to express our equations
+in matrix formulation. Let $\Sigma$ be the 2D spin configurations in the form
+of a matrix, elements in the matrix corresponds to the site in the square lattice.
+\begin{equation}
+E = \frac{1}{L^2} \left(
+\|\Sigma * \left( \Sigma \cdot S_l \right)\| +\| \Sigma * \left( S_u \cdot \Sigma \right)\|
+\right)
+\end{equation}
+where $S_l$ and $S_u$ are matrices that rotate the columns and rows matrix elements such that 
+when the resultant matrix multiply by the original spin matrix $\Sigma$ element wise $*$, 
+then sum element wise gives the hamiltonian. $\|\cdot\|$ represents summing over elements
+in a matrix.
+\begin{equation}
+S_u = \left( \begin{array}{cccccc}
+0  &-1 & 0 & \cdots & 0 & 0 \\
+0  & 0 &-1 & \cdots & 0 & 0 \\
+\vdots & & & & \\
+0  & 0 & 0 & \cdots &-1 & 0 \\
+0  & 0 & 0 & \cdots & 0 &-1 \\
+-1 & 0 & 0 & \cdots & 0 & 0 \\
+\end{array} \right)
+\end{equation}
+\begin{equation}
+S_l = \left( \begin{array}{cccccc}
+0   & 0 & 0 & \cdots & 0 & -1 \\
+-1  & 0 & 0 & \cdots & 0 & 0 \\
+0   &-1 & 0 & \cdots & 0 & 0 \\
+\vdots & & & & \\
+0  & 0 & 0 & \cdots & 0 & 0 \\
+0  & 0 & 0 & \cdots &-1 & 0 \\
+\end{array} \right)
+\end{equation}
+
+\section{Using RevNet to recover detailed balance}
+Detailed balance can be recovered by replacing MLP with RevNet. 
+RevNet takes in two spin configurations, $\sigma_1,\sigma_2$
+and output two configurations $\sigma_1',\sigma_2'$.
+In RevNet, there are two ends of the network, feed data into
+one end and the output will be on the other end and vice versa.
+For clarity, we define the directions ``forward" and ``backward"
+but since RevNet is symmetric, forward and backward definition
+is arbitrarily fixed.
+Algorithm goest like this
+\begin{enumerate}
+\item Given configurations $\sigma_1,\sigma_2$
+\item Pass $\sigma_1,\sigma_2$ through RevNet in the forward 
+or backward direction with the same probability
+to generate $\sigma_1',\sigma_2'$
+\item Accept the new configurations $\sigma_1',\sigma_2'$ with the probability
+\begin{equation}
+A(\sigma_1,\sigma_2 \rightarrow \sigma_1',\sigma_2') = \min(1,\exp(-\beta [(E_1'-E_1)+(E_2'-E_2)] ))
+\end{equation}
+\end{enumerate}
+When the RevNet learns the transitions with $(E_1+E_2)\approx (E_1'+E_2')$, 
+this algorithm becomes efficient.
+
+\subsection{Proof of detailed balance condition}
+Proof of detailed balance condition of the above algorithm is as follows.
+Assuming configurations $\sigma_1,\sigma_2$ are sampled independently
+from the equilibrium distribution then the probability of sampling is
+\begin{eqnarray} \nonumber
+p(\sigma_1,\sigma_2) & = & \exp(-\beta E(\sigma_1)) \exp(-\beta E(\sigma_2))  / {\cal Z}^2 \\
+                     & = & \exp(-\beta (E_1+E_2)) / {\cal Z}^2
+\end{eqnarray}
+Make use of the reversibility of RevNet, the forward and backward 
+trial moves probabilities 
+between two sets of configurations linked by RevNet are the same, i.e.
+\begin{equation}
+T[ (\sigma_1 ,\sigma_2 ) \rightarrow (\sigma_1',\sigma_2')] =
+T[ (\sigma_1',\sigma_2') \rightarrow (\sigma_1 ,\sigma_2 )] = 0.5
+\end{equation}
+Then the transition matrix becomes the acceptance matrix
+\begin{equation}
+\frac{A[ (\sigma_1 ,\sigma_2 ) \rightarrow (\sigma_1',\sigma_2')]}
+     {A[ (\sigma_1',\sigma_2') \rightarrow (\sigma_1 ,\sigma_2 )]} = 
+     \frac{\exp(-\beta (E_1'+E_2')}
+          {\exp(-\beta (E_1 +E_2 )} =
+     \frac{p(\sigma_1',\sigma_2')}{p(\sigma_1,\sigma_2)}
+\end{equation}
+
+\section{Loss function}
+The loss function is define as,
+\begin{equation}
+Loss = [(E_1+E_2) - (E_1'-E_2')]^2 + 
+      \frac{\lambda}{2 L^2} \left[ \| \Sigma_1' *\Sigma_1' \| +
+                     \| \Sigma_2' *\Sigma_2' \| \right]
+\mbox{ with }\lambda<0
+\end{equation}
+Since the RevNet does not output $s_i = \pm 1$, the second term in the above
+equation penalize outputs that gives $\sigma'<1$.
+Set activation function to be $tanh$ to bound spins to $\pm 1$.
+$L^2$ is the number of lattice sites. It is use to normalize the loss to make it
+lattice size invariant.
+
+
+
+\end{document}
+
