@@ -39,9 +39,8 @@ class revnet_trial:
     # ------------- define the cost function ------------
     loss_op, fedi_mean_op, norm_mean_op, ey1, ey2  = self.cost.get(e1,e2,y1,y2)
 
-    decorrelate1_op = tf.divide(tf.reduce_mean(tf.multiply(x1,y1)),self.n_spins)
-    decorrelate2_op = tf.divide(tf.reduce_mean(tf.multiply(x2,y2)),self.n_spins)
-
+    decorrelate1_op = tf.reduce_mean(tf.multiply(x1,y1))
+    decorrelate2_op = tf.reduce_mean(tf.multiply(x2,y2))
     # ------------- define the optimizer ------------
     optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
     train_op  = optimizer.minimize(loss_op)
@@ -57,12 +56,14 @@ class revnet_trial:
       print('------------- check energy calculation ------------')
       y1_np, y2_np, ey1_, ey2_ = sess.run([y1,y2,ey1,ey2], \
 	                                  feed_dict={x1:trainx1,x2:trainx2,e1:traine1,e2:traine2})
-      y1_np = y1_np.reshape((-1, self.L, self.L))
-      y2_np = y2_np.reshape((-1, self.L, self.L))
       ey1_np = self.cost.np_energy(y1_np)
       ey2_np = self.cost.np_energy(y2_np)
       print('checking energy :: mean diff 1 ', np.mean(np.square(ey1_np-ey1_)))
+      if(self.rel_error(ey1_np,ey1_) > 1e-5):
+        raise ValueError('Error in ey1 calculation')
       print('checking energy :: mean diff 2 ', np.mean(np.square(ey2_np-ey2_)))
+      if(self.rel_error(ey2_np,ey2_) > 1e-5):
+        raise ValueError('Error in ey2 calculation')
       #----------------------------------------------------------    
 
       for i in range(niter):
@@ -71,14 +72,28 @@ class revnet_trial:
           loss, fedi_mean, norm_mean = \
 	           sess.run([loss_op,fedi_mean_op,norm_mean_op], \
 		             feed_dict={x1:trainx1,x2:trainx2,e1:traine1,e2:traine2})
-          print('i ',i, ' loss ',loss) 
-          print('fedi_mean ',fedi_mean)
-          print('norm_mean ',norm_mean)
+          print('------------- check cost calculation ------------')
+          y1_np, y2_np  = sess.run([y1,y2,], \
+                                   feed_dict={x1:trainx1,x2:trainx2,e1:traine1,e2:traine2})
+          loss_np, fedi_mean_np, norm_mean_np = self.cost.np_cost(traine1,traine2,y1_np,y2_np)
+          #----------------------------------------------------------    
+          print('i ',i, ' loss ',loss)   # min loss = lam
+          print('fedi_mean ',fedi_mean)   # expect range of [0, 16*nspins]
+          print('norm_mean ',norm_mean)   # expect range of [0, 2]
+          if(abs(loss-loss_np) > 1e-5):
+	    raise ValueError('Error in loss calculation. loss_tf: ' + str(loss) + ', loss_np: ' + str(loss_np))
+          if(abs(fedi_mean-fedi_mean_np) > 1e-5):
+	    raise ValueError('Error in fedi_mean calculation. fedi_mean_tf: ' + str(fedi_mean) + ', fedi_mean_np: ' + str(fedi_mean_np))
+          if(abs(norm_mean-norm_mean_np) > 1e-5):
+	    raise ValueError('Error in norm_mean calculation. norm_mean_tf: ' + str(norm_mean) + ', norm_mean_np: ' + str(norm_mean_np))
 	  deco1 = sess.run(decorrelate1_op,feed_dict={x1:trainx1,x2:trainx2})
 	  deco2 = sess.run(decorrelate2_op,feed_dict={x1:trainx1,x2:trainx2})
           print('decorrelation ',deco1,' : ',deco2)
 
-
+# ==================================================================
+  def rel_error(self,x,y):
+    # returns relative error
+    return np.max(np.abs(x-y) / (np.maximum(1e-8, np.abs(x) + np.abs(y))))
 # ==================================================================
   def generate(self,testx1,testx2):
     return(0) # do nothing for now
