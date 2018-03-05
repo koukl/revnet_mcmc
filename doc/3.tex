@@ -94,9 +94,9 @@ transformation functions.}
 %
 Equations for RevNet are,
 \begin{eqnarray} 
-\sigma'_2 & = & \frac{1}{2}[ \sigma_2 + F(\sigma_1) ] \\ \nonumber
-\sigma'_1 & = & \frac{1}{2}[ \sigma_1 + G(\sigma'_2) ] \\ \nonumber
-\sigma_1 & = & 2 \sigma'_1 - F(\sigma'_2) \\ \nonumber
+2 \sigma'_2 & = &  \sigma_2 + F(\sigma_1)  \\ \nonumber
+2 \sigma'_1 & = &  \sigma_1 + G(2 \sigma'_2)  \\ \nonumber
+\sigma_1 & = & 2 \sigma'_1 - F(2 \sigma'_2) \\ \nonumber
 \sigma_2 & = & 2 \sigma'_2 - G(\sigma_1) 
 \end{eqnarray}
 $F$ and $G$ can be any network or transformation. In our implementation
